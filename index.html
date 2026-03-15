@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#FFF8F0">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+<title>Hôm nay làm gì? ✨</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#FFF8F0;--card:#FFFFFF;--primary:#FF6B6B;--primary-light:#FFE0E0;
+  --secondary:#4ECDC4;--secondary-light:#E0FFF9;--accent:#FFE66D;--accent-light:#FFF9DB;
+  --purple:#C3AED6;--purple-light:#F0E6FF;--text:#2D3436;--text-light:#636E72;
+  --shadow:0 2px 12px rgba(0,0,0,0.06);--shadow-hover:0 4px 20px rgba(0,0,0,0.1);
+  --safe-bottom:env(safe-area-inset-bottom,0px);--safe-top:env(safe-area-inset-top,0px);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* Blobs */
+.blob{position:fixed;border-radius:50%;filter:blur(60px);opacity:.15;z-index:0;animation:float 10s ease-in-out infinite}
+.blob-1{width:200px;height:200px;background:var(--primary);top:-80px;right:-40px}
+.blob-2{width:180px;height:180px;background:var(--secondary);bottom:-60px;left:-40px;animation-delay:3s}
+.blob-3{width:150px;height:150px;background:var(--accent);top:50%;left:-60px;animation-delay:6s}
+@keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-20px) scale(1.03)}}
+
+.container{max-width:100%;width:100%;margin:0 auto;padding:12px 16px calc(70px + var(--safe-bottom));position:relative;z-index:1}
+
+/* === NAV TABS (bottom) === */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);display:flex;justify-content:space-around;padding:8px 0 calc(6px + var(--safe-bottom));box-shadow:0 -2px 16px rgba(0,0,0,0.06);z-index:200}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 12px;border:none;background:none;cursor:pointer;font-family:inherit;color:var(--text-light);transition:all .2s;font-size:10px;font-weight:600}
+.nav-item.active{color:var(--primary)}
+.nav-item .nav-icon{font-size:20px;transition:transform .2s}
+.nav-item.active .nav-icon{transform:scale(1.15)}
+
+/* === PAGES === */
+.page{display:none;animation:pageFade .3s ease}
+.page.active{display:block}
+@keyframes pageFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* === HEADER === */
+.header{text-align:center;padding:14px 0 10px}
+.header-emoji{font-size:36px;display:block;margin-bottom:2px;animation:wave 2.5s ease-in-out infinite}
+@keyframes wave{0%,100%{transform:rotate(0)}25%{transform:rotate(12deg)}75%{transform:rotate(-8deg)}}
+.header h1{font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--primary),#FF8E53);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.header .date{font-size:12px;color:var(--text-light);margin-top:2px;font-weight:500}
+
+/* === GREETING === */
+.greeting-card{background:linear-gradient(135deg,#FF6B6B,#FF8E53);border-radius:16px;padding:18px;color:white;margin-bottom:14px;box-shadow:0 6px 20px rgba(255,107,107,.2);position:relative;overflow:hidden}
+.greeting-card::after{content:'';position:absolute;width:90px;height:90px;background:rgba(255,255,255,.08);border-radius:50%;top:-25px;right:-10px}
+.greeting-text{font-size:16px;font-weight:700;margin-bottom:3px}
+.greeting-sub{font-size:11px;opacity:.9}
+.progress-bar{margin-top:12px;background:rgba(255,255,255,.25);border-radius:10px;height:5px;overflow:hidden}
+.progress-fill{height:100%;background:white;border-radius:10px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.progress-text{font-size:10px;margin-top:3px;opacity:.85;text-align:right}
+
+/* === QUICK FILTERS (Todoist-style) === */
+.quick-filters{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.quick-filters::-webkit-scrollbar{display:none}
+.qf-btn{padding:7px 14px;border-radius:20px;font-size:11px;font-weight:700;border:none;cursor:pointer;white-space:nowrap;transition:all .25s;background:var(--card);color:var(--text-light);box-shadow:var(--shadow);flex-shrink:0;position:relative}
+.qf-btn.active{color:white;transform:scale(1.04)}
+.qf-btn .qf-count{font-size:9px;background:rgba(255,255,255,.3);padding:1px 5px;border-radius:8px;margin-left:4px}
+.qf-btn[data-f="all"].active{background:linear-gradient(135deg,#636E72,#2D3436)}
+.qf-btn[data-f="today"].active{background:linear-gradient(135deg,#FF6B6B,#FF8E53)}
+.qf-btn[data-f="tomorrow"].active{background:linear-gradient(135deg,#A18CD1,#FBC2EB)}
+.qf-btn[data-f="week"].active{background:linear-gradient(135deg,#4ECDC4,#44B09E)}
+.qf-btn[data-f="overdue"].active{background:linear-gradient(135deg,#e74c3c,#c0392b)}
+.qf-btn[data-f="nodate"].active{background:linear-gradient(135deg,#95a5a6,#7f8c8d)}
+
+/* === CATEGORY PILLS === */
+.cat-pills{display:flex;gap:5px;margin-bottom:12px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none}
+.cat-pills::-webkit-scrollbar{display:none}
+.cat-pill{padding:5px 12px;border-radius:16px;font-size:11px;font-weight:600;border:none;cursor:pointer;white-space:nowrap;transition:all .25s;background:transparent;color:var(--text-light);flex-shrink:0}
+.cat-pill.active{background:var(--card);box-shadow:var(--shadow)}
+.cat-pill[data-cat="daily"].active{color:var(--primary)}
+.cat-pill[data-cat="health"].active{color:#2EAE9F}
+.cat-pill[data-cat="work"].active{color:#8B6FC0}
+.cat-pill[data-cat="personal"].active{color:#D4940E}
+
+/* === ADD SECTION === */
+.add-section{background:var(--card);border-radius:16px;padding:14px;margin-bottom:14px;box-shadow:var(--shadow);display:none}
+.add-section.show{display:block;animation:slideDown .3s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.add-section input[type="text"]{width:100%;border:2px solid #f0f0f0;border-radius:12px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none;transition:border-color .3s}
+.add-section input[type="text"]:focus{border-color:var(--primary)}
+
+.form-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.form-row select,.form-row input[type="time"]{flex:1;min-width:0;padding:9px 10px;border:2px solid #f0f0f0;border-radius:12px;font-size:12px;font-family:inherit;outline:none;background:white}
+.form-row select:focus,.form-row input[type="time"]:focus{border-color:var(--primary)}
+.form-row label{font-size:12px;font-weight:600;color:var(--text-light);white-space:nowrap}
+
+/* Date picker area */
+.date-pick-area{margin-top:8px}
+.date-shortcuts{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
+.date-sc{padding:6px 11px;border-radius:16px;font-size:11px;font-weight:600;border:2px solid #f0f0f0;background:white;cursor:pointer;transition:all .2s;color:var(--text-light)}
+.date-sc.selected{border-color:var(--primary);background:var(--primary-light);color:var(--primary)}
+
+/* Mini calendar */
+.mini-cal{background:#fafafa;border-radius:12px;padding:10px;margin-top:6px;display:none}
+.mini-cal.show{display:block;animation:slideDown .2s ease}
+.mini-cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.mini-cal-title{font-size:13px;font-weight:700;color:var(--text)}
+.mini-cal-nav{display:flex;gap:8px}
+.mini-cal-nav button{background:none;border:none;font-size:16px;cursor:pointer;padding:2px 6px;color:var(--text-light);border-radius:6px}
+.mini-cal-nav button:active{background:#eee}
+.mini-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.mini-cal-day{font-size:10px;font-weight:600;color:var(--text-light);padding:4px 0}
+.mini-cal-date{font-size:12px;padding:6px 2px;border-radius:8px;cursor:pointer;transition:all .15s;font-weight:500;color:var(--text)}
+.mini-cal-date:active{transform:scale(.92)}
+.mini-cal-date.today{color:var(--primary);font-weight:700}
+.mini-cal-date.selected{background:var(--primary);color:white;font-weight:700}
+.mini-cal-date.other-month{color:#ccc}
+.mini-cal-date.past{color:#ccc}
+.mini-cal-date.has-task{position:relative}
+.mini-cal-date.has-task::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--secondary)}
+
+/* Priority, alarm, gcal chips */
+.chip-row{display:flex;gap:5px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.chip{padding:6px 11px;border-radius:16px;font-size:11px;font-weight:600;border:2px solid #f0f0f0;background:white;cursor:pointer;transition:all .2s;color:var(--text-light)}
+.chip.selected{border-color:var(--primary)}
+.chip[data-p="high"].selected{background:#FFE0E0;color:#FF6B6B;border-color:#FF6B6B}
+.chip[data-p="medium"].selected{background:var(--accent-light);color:#D4940E;border-color:#FFE66D}
+.chip[data-p="low"].selected{background:var(--secondary-light);color:#2EAE9F;border-color:var(--secondary)}
+
+/* Toggle row */
+.toggle-row{display:flex;gap:8px;margin-top:8px;align-items:center}
+.toggle-sw{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle-sw input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:#ddd;border-radius:22px;transition:.3s}
+.toggle-slider::before{content:'';position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.toggle-sw input:checked+.toggle-slider{background:var(--primary)}
+.toggle-sw input:checked+.toggle-slider::before{transform:translateX(18px)}
+.toggle-label{font-size:12px;font-weight:600;color:var(--text-light)}
+
+.alarm-chips{display:none;gap:5px;flex-wrap:wrap;margin-top:6px}
+.alarm-chips.show{display:flex}
+
+.btn-add{width:100%;margin-top:10px;padding:11px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--primary),#FF8E53);color:white;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:transform .15s}
+.btn-add:active{transform:scale(.97)}
+
+/* === TODO ITEMS === */
+.section-title{font-size:14px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;color:var(--text)}
+.section-title .count{background:var(--primary-light);color:var(--primary);font-size:10px;padding:1px 6px;border-radius:8px}
+.date-group-title{font-size:12px;font-weight:700;color:var(--text-light);margin:14px 0 6px;padding-left:4px}
+
+.todo-list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+
+.todo-item{background:var(--card);border-radius:14px;padding:12px;box-shadow:var(--shadow);display:flex;align-items:flex-start;gap:10px;transition:all .25s;animation:fadeIn .3s ease;position:relative;overflow:hidden}
+.todo-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.todo-item[data-cat="daily"]::before{background:linear-gradient(180deg,#FF6B6B,#FF8E53)}
+.todo-item[data-cat="health"]::before{background:linear-gradient(180deg,#4ECDC4,#44B09E)}
+.todo-item[data-cat="work"]::before{background:linear-gradient(180deg,#A18CD1,#FBC2EB)}
+.todo-item[data-cat="personal"]::before{background:linear-gradient(180deg,#FFE66D,#F7971E)}
+.todo-item:active{transform:scale(.98)}
+.todo-item.done{opacity:.4}
+.todo-item.done .todo-text{text-decoration:line-through}
+.todo-item.overdue{border-left:3px solid #e74c3c}
+.todo-item.overdue::before{display:none}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+
+.checkbox{width:22px;height:22px;border-radius:50%;border:2.5px solid #ddd;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .3s;margin-top:1px}
+.todo-item.done .checkbox{background:linear-gradient(135deg,var(--secondary),#44B09E);border-color:var(--secondary)}
+.checkbox svg{width:12px;height:12px;opacity:0;transition:opacity .3s}
+.todo-item.done .checkbox svg{opacity:1}
+
+.todo-content{flex:1;min-width:0}
+.todo-text{font-size:13px;font-weight:600;line-height:1.4;word-break:break-word}
+.todo-meta{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap}
+.todo-tag{font-size:9px;padding:2px 6px;border-radius:5px;font-weight:600}
+.tag-daily{background:var(--primary-light);color:var(--primary)}
+.tag-health{background:var(--secondary-light);color:#2EAE9F}
+.tag-work{background:var(--purple-light);color:#8B6FC0}
+.tag-personal{background:var(--accent-light);color:#D4940E}
+.tag-time{background:#f0f0f0;color:var(--text-light)}
+.tag-repeat{background:#E8F8F5;color:#27AE60}
+.tag-alarm{background:#FFE0E0;color:#FF6B6B}
+.tag-gcal{background:#E8F0FE;color:#1A73E8}
+.tag-date{background:#f3e8ff;color:#7c3aed}
+.tag-priority-high{background:#FFE0E0;color:#FF6B6B}
+.tag-priority-medium{background:var(--accent-light);color:#D4940E}
+.tag-overdue{background:#fde8e8;color:#e74c3c}
+
+.item-actions{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.act-btn{background:none;border:none;cursor:pointer;padding:3px;font-size:14px;transition:transform .15s;color:#ccc}
+.act-btn:active{transform:scale(.85)}
+.act-btn.gcal-b{color:#1A73E8}
+.act-btn.del-b:hover{color:var(--primary)}
+
+/* === CALENDAR PAGE === */
+.cal-header{display:flex;justify-content:space-between;align-items:center;padding:12px 4px}
+.cal-title{font-size:17px;font-weight:800;color:var(--text)}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{background:var(--card);border:none;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;box-shadow:var(--shadow);transition:transform .15s}
+.cal-nav button:active{transform:scale(.92)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;margin-bottom:16px}
+.cal-day-name{font-size:10px;font-weight:700;color:var(--text-light);padding:6px 0}
+.cal-date{font-size:13px;padding:10px 2px;border-radius:10px;cursor:pointer;transition:all .15s;font-weight:500;position:relative}
+.cal-date:active{transform:scale(.9)}
+.cal-date.today{color:var(--primary);font-weight:800;background:var(--primary-light)}
+.cal-date.selected{background:var(--primary);color:white;font-weight:700}
+.cal-date.other-month{color:#ccc}
+.cal-date.has-task::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--secondary)}
+.cal-date.has-task.selected::after{background:white}
+.cal-selected-info{padding:4px 0 8px}
+.cal-selected-date{font-size:14px;font-weight:700;margin-bottom:8px;color:var(--text)}
+
+/* === NOTI === */
+.noti-bar{position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,var(--secondary),#44B09E);color:white;text-align:center;padding:12px 16px;font-size:12px;font-weight:600;transform:translateY(-100%);transition:transform .4s ease;z-index:1000;padding-top:calc(12px + var(--safe-top))}
+.noti-bar.show{transform:translateY(0)}
+
+.noti-permission{background:linear-gradient(135deg,#A18CD1,#FBC2EB);border-radius:14px;padding:12px 14px;color:white;margin-bottom:12px;display:none;box-shadow:var(--shadow);cursor:pointer}
+.noti-permission.show{display:flex;align-items:center;gap:8px}
+.noti-permission .np-icon{font-size:20px;flex-shrink:0}
+.noti-permission .np-text{font-size:11px;font-weight:600;line-height:1.3}
+
+/* Urgency */
+.todo-item.urgent{box-shadow:0 0 0 2px var(--primary),var(--shadow);animation:urgentPulse 2s ease-in-out infinite}
+@keyframes urgentPulse{0%,100%{box-shadow:0 0 0 2px var(--primary),var(--shadow)}50%{box-shadow:0 0 0 3px rgba(255,107,107,.3),var(--shadow-hover)}}
+
+/* Confetti */
+.confetti-piece{position:fixed;z-index:9999;animation:confettiFall 1s ease-out forwards}
+@keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0) scale(1)}100%{opacity:0;transform:translateY(300px) rotate(720deg) scale(.3)}}
+
+/* Alarm popup */
+.alarm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.alarm-overlay.show{display:flex}
+.alarm-popup{background:white;border-radius:20px;padding:24px 20px;text-align:center;max-width:300px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:popIn .4s cubic-bezier(.175,.885,.32,1.275)}
+@keyframes popIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+.alarm-popup .a-icon{font-size:44px;margin-bottom:10px;animation:ring .5s ease-in-out infinite alternate}
+@keyframes ring{0%{transform:rotate(-15deg)}100%{transform:rotate(15deg)}}
+.alarm-popup .a-title{font-size:16px;font-weight:700;margin-bottom:4px}
+.alarm-popup .a-desc{font-size:12px;color:var(--text-light);margin-bottom:16px}
+.alarm-popup .a-btn{padding:10px 24px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--primary),#FF8E53);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;width:100%}
+.alarm-popup .a-done{padding:9px 24px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--secondary),#44B09E);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;width:100%;margin-top:6px}
+
+/* Completed toggle */
+.comp-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:8px;font-size:12px;font-weight:600;color:var(--text-light);user-select:none}
+.comp-toggle .arrow{transition:transform .3s;font-size:10px}
+.comp-toggle .arrow.open{transform:rotate(90deg)}
+
+.empty-state{text-align:center;padding:24px 16px;color:var(--text-light)}
+.empty-state .emoji{font-size:40px;margin-bottom:8px;display:block}
+.empty-state p{font-size:12px;line-height:1.5}
+
+.sync-status{text-align:center;font-size:10px;color:var(--text-light);padding:4px 0 6px;opacity:.6}
+
+/* FAB */
+.fab{position:fixed;bottom:calc(68px + var(--safe-bottom));right:16px;width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#FF8E53);color:white;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 18px rgba(255,107,107,.35);transition:all .3s;z-index:150;display:flex;align-items:center;justify-content:center}
+.fab:active{transform:scale(.92)}
+.fab.open{transform:rotate(45deg);background:linear-gradient(135deg,#636E72,#2D3436)}
+</style>
+</head>
+<body>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+<div class="noti-bar" id="notiBar"></div>
+
+<!-- Alarm popup -->
+<div class="alarm-overlay" id="alarmOverlay">
+  <div class="alarm-popup">
+    <div class="a-icon">⏰</div>
+    <div class="a-title" id="alarmTitle"></div>
+    <div class="a-desc" id="alarmDesc"></div>
+    <button class="a-btn" onclick="dismissAlarm()">Biết rồi!</button>
+    <button class="a-done" onclick="doneFromAlarm()">Xong rồi! ✅</button>
+  </div>
+</div>
+
+<!-- ========== PAGE: HOME ========== -->
+<div class="page active" id="pageHome">
+  <div class="container">
+    <div class="header">
+      <span class="header-emoji">🌸</span>
+      <h1>Hôm nay làm gì?</h1>
+      <div class="date" id="dateText"></div>
+    </div>
+
+    <div class="noti-permission" id="notiPermission" onclick="requestNotiPerm()">
+      <span class="np-icon">🔔</span>
+      <span class="np-text">Bấm để bật thông báo nhắc nhở nha!</span>
+    </div>
+
+    <div class="greeting-card">
+      <div class="greeting-text" id="greetingText"></div>
+      <div class="greeting-sub" id="greetingSub"></div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-text" id="progressText"></div>
+    </div>
+
+    <!-- Quick filters (Todoist-style) -->
+    <div class="quick-filters" id="quickFilters"></div>
+    <!-- Category pills -->
+    <div class="cat-pills" id="catPills"></div>
+
+    <!-- Add section -->
+    <div class="add-section" id="addSection">
+      <input type="text" id="todoInput" placeholder="Cần làm gì nè? 😊" onkeydown="if(event.key==='Enter')addTodo()">
+      <div class="form-row">
+        <select id="catSelect">
+          <option value="daily">🏠 Hàng ngày</option>
+          <option value="health">💪 Sức khỏe</option>
+          <option value="work">💼 Công việc</option>
+          <option value="personal">💛 Cá nhân</option>
+        </select>
+        <input type="time" id="timeInput">
+      </div>
+
+      <!-- Date picker -->
+      <div class="date-pick-area">
+        <div class="date-shortcuts">
+          <button class="date-sc selected" data-d="today" onclick="pickDateShortcut('today')">📌 Hôm nay</button>
+          <button class="date-sc" data-d="tomorrow" onclick="pickDateShortcut('tomorrow')">🌅 Ngày mai</button>
+          <button class="date-sc" data-d="nextweek" onclick="pickDateShortcut('nextweek')">📆 Tuần sau</button>
+          <button class="date-sc" data-d="pick" onclick="toggleMiniCal()">🗓️ Chọn ngày</button>
+          <button class="date-sc" data-d="none" onclick="pickDateShortcut('none')">❌ Không</button>
+        </div>
+        <div class="mini-cal" id="miniCal"></div>
+      </div>
+
+      <!-- Priority -->
+      <div class="chip-row">
+        <label style="font-size:12px;font-weight:600;color:var(--text-light)">⭐</label>
+        <button class="chip selected" data-p="low" onclick="selPriority('low')">Bình thường</button>
+        <button class="chip" data-p="medium" onclick="selPriority('medium')">Quan trọng</button>
+        <button class="chip" data-p="high" onclick="selPriority('high')">Rất gấp!</button>
+      </div>
+
+      <!-- Alarm -->
+      <div class="toggle-row">
+        <label class="toggle-sw"><input type="checkbox" id="alarmToggle" onchange="toggleAlarmChips()"><span class="toggle-slider"></span></label>
+        <span class="toggle-label">🔔 Nhắc nhở</span>
+      </div>
+      <div class="alarm-chips" id="alarmChips">
+        <button class="chip" data-mins="0" onclick="selAlarm(0)">Đúng giờ</button>
+        <button class="chip selected" data-mins="15" onclick="selAlarm(15)">15 phút</button>
+        <button class="chip" data-mins="30" onclick="selAlarm(30)">30 phút</button>
+        <button class="chip" data-mins="60" onclick="selAlarm(60)">1 tiếng</button>
+        <button class="chip" data-mins="120" onclick="selAlarm(120)">2 tiếng</button>
+      </div>
+
+      <!-- Repeat -->
+      <div class="form-row">
+        <label>🔁</label>
+        <select id="repeatSelect">
+          <option value="none">Không lặp</option>
+          <option value="daily">Mỗi ngày</option>
+          <option value="weekday">Ngày thường</option>
+          <option value="weekend">Cuối tuần</option>
+          <option value="weekly">Mỗi tuần</option>
+          <option value="monthly">Mỗi tháng</option>
+        </select>
+      </div>
+
+      <!-- Google Cal -->
+      <div class="toggle-row">
+        <label class="toggle-sw"><input type="checkbox" id="gcalToggle"><span class="toggle-slider"></span></label>
+        <span class="toggle-label">📅 Google Calendar</span>
+      </div>
+
+      <button class="btn-add" onclick="addTodo()">Thêm vào ✨</button>
+    </div>
+
+    <div id="todoContainer"></div>
+    <div id="doneContainer"></div>
+    <div class="sync-status" id="syncStatus"></div>
+  </div>
+</div>
+
+<!-- ========== PAGE: CALENDAR ========== -->
+<div class="page" id="pageCal">
+  <div class="container">
+    <div class="cal-header">
+      <div class="cal-title" id="calTitle"></div>
+      <div class="cal-nav">
+        <button onclick="calNav(-1)">◀</button>
+        <button onclick="calNavToday()">Hôm nay</button>
+        <button onclick="calNav(1)">▶</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-selected-info">
+      <div class="cal-selected-date" id="calSelectedDate"></div>
+      <div id="calTodoList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== BOTTOM NAV ========== -->
+<div class="bottom-nav">
+  <button class="nav-item active" onclick="switchPage('home')"><span class="nav-icon">🏠</span>Việc cần làm</button>
+  <button class="nav-item" onclick="switchPage('cal')"><span class="nav-icon">📅</span>Lịch</button>
+</div>
+
+<button class="fab" id="fabBtn" onclick="toggleAdd()">+</button>
+
+<script>
+// ====== STATE ======
+let todos=[], nextId=1, currentFilter='all', currentCatFilter='all', showCompleted=true;
+let selectedPriority='low', selectedAlarmMins=15, currentAlarmTodoId=null;
+let firedAlarms=new Set();
+let selectedDate=todayStr(); // for add form
+let calViewYear, calViewMonth, calSelectedDate=todayStr();
+const SK='hom_nay_v2';
+
+const catL={daily:'Hàng ngày',health:'Sức khỏe',work:'Công việc',personal:'Cá nhân'};
+const catE={daily:'🏠',health:'💪',work:'💼',personal:'💛'};
+const repL={daily:'Mỗi ngày',weekday:'Ngày thường',weekend:'Cuối tuần',weekly:'Mỗi tuần',monthly:'Mỗi tháng'};
+const priL={high:'Rất gấp',medium:'Quan trọng',low:'Bình thường'};
+const almL={0:'Đúng giờ',15:'15p trước',30:'30p trước',60:'1h trước',120:'2h trước'};
+const dayNames=['CN','T2','T3','T4','T5','T6','T7'];
+const monthNames=['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+
+function todayStr(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function tomorrowStr(){const d=new Date();d.setDate(d.getDate()+1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function nextWeekStr(){const d=new Date();d.setDate(d.getDate()+7);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function formatDateVi(ds){if(!ds)return'';const [y,m,d]=ds.split('-');return `${parseInt(d)}/${parseInt(m)}`}
+function formatDateViFull(ds){if(!ds)return'';const [y,m,d]=ds.split('-');const dt=new Date(parseInt(y),parseInt(m)-1,parseInt(d));return `${dayNames[dt.getDay()]}, ${parseInt(d)} ${monthNames[parseInt(m)-1]}`}
+function isOverdue(t){if(!t.date||t.done)return false;return t.date<todayStr()}
+function isToday(ds){return ds===todayStr()}
+function isTomorrow(ds){return ds===tomorrowStr()}
+function isThisWeek(ds){if(!ds)return false;const d=new Date(ds);const now=new Date();const weekEnd=new Date();weekEnd.setDate(now.getDate()+(7-now.getDay()));return d>=now&&d<=weekEnd}
+
+// ====== STORAGE ======
+function save(){try{localStorage.setItem(SK,JSON.stringify({todos,nextId}));const fk=SK+'_fired';const today=new Date().toDateString();localStorage.setItem(fk,JSON.stringify({date:today,fired:[...firedAlarms]}));updSync()}catch(e){}}
+function load(){try{const r=localStorage.getItem(SK);if(r){const d=JSON.parse(r);todos=d.todos||[];nextId=d.nextId||1;resetDaily()}else initSample();const fr=localStorage.getItem(SK+'_fired');if(fr){const fd=JSON.parse(fr);if(fd.date===new Date().toDateString())firedAlarms=new Set(fd.fired)}}catch(e){initSample()}}
+function resetDaily(){const lk=SK+'_lastday';const today=new Date().toDateString();if(localStorage.getItem(lk)!==today){const dow=new Date().getDay();todos.forEach(t=>{if(t.repeat&&t.repeat!=='none'&&t.done){if(t.repeat==='daily')t.done=false;else if(t.repeat==='weekday'&&dow>=1&&dow<=5)t.done=false;else if(t.repeat==='weekend'&&(dow===0||dow===6))t.done=false;else if(t.repeat==='weekly'||t.repeat==='monthly')t.done=false}});localStorage.setItem(lk,today);firedAlarms.clear();save()}}
+function updSync(){const n=new Date();document.getElementById('syncStatus').textContent=`💾 Đã lưu lúc ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`}
+
+// ====== INIT SAMPLE ======
+function initSample(){
+  const s=[
+    {text:'Uống vitamin',cat:'health',time:'09:00',date:todayStr(),repeat:'daily',priority:'medium',alarm:true,alarmMins:15},
+    {text:'Giặt quần áo',cat:'daily',time:'10:00',date:todayStr(),repeat:'none',priority:'low',alarm:false,alarmMins:0},
+    {text:'Uống 2 lít nước',cat:'health',time:'',date:todayStr(),repeat:'daily',priority:'low',alarm:false,alarmMins:0},
+    {text:'Tập thể dục 30 phút',cat:'health',time:'18:00',date:todayStr(),repeat:'weekday',priority:'high',alarm:true,alarmMins:30},
+    {text:'Đi chợ - sữa, trứng',cat:'daily',time:'15:00',date:todayStr(),repeat:'none',priority:'medium',alarm:true,alarmMins:60},
+    {text:'Nộp báo cáo',cat:'work',time:'14:00',date:tomorrowStr(),repeat:'none',priority:'high',alarm:true,alarmMins:120},
+    {text:'Gọi điện cho mẹ',cat:'personal',time:'20:00',date:nextWeekStr(),repeat:'weekly',priority:'high',alarm:true,alarmMins:60},
+    {text:'Tưới cây',cat:'daily',time:'',date:todayStr(),repeat:'weekly',priority:'low',alarm:false,alarmMins:0},
+    {text:'Khám răng',cat:'health',time:'10:00',date:nextWeekStr(),repeat:'none',priority:'medium',alarm:true,alarmMins:1440},
+  ];
+  s.forEach(x=>todos.push({id:nextId++,...x,done:false,gcal:false,createdAt:Date.now()}));
+  save();
+}
+
+// ====== DATE/GREETING ======
+function updDate(){const n=new Date();const d=['Chủ nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];document.getElementById('dateText').textContent=`${d[n.getDay()]}, ngày ${n.getDate()} tháng ${n.getMonth()+1}`}
+function updGreeting(){const h=new Date().getHours();let e,t,s;if(h<7){e='🌙';t='Còn sớm lắm';s='Từ từ thôi nha 💤'}else if(h<12){e='☀️';t='Chào buổi sáng!';s='Hôm nay cố lên nha! 💪'}else if(h<14){e='🍽️';t='Ăn trưa chưa?';s='Ăn ngon rồi làm tiếp! 🍜'}else if(h<18){e='🌤️';t='Chiều rồi, cố lên!';s='Chút nữa xong rồi! ✨'}else if(h<21){e='🌅';t='Vất vả rồi!';s='Làm nốt mấy cái còn lại 🎯'}else{e='🌙';t='Giỏi lắm hôm nay!';s='Nghỉ ngơi đi nha 💤'}document.getElementById('greetingText').textContent=`${e} ${t}`;document.getElementById('greetingSub').textContent=s}
+
+// ====== FILTERS ======
+function renderFilters(){
+  const today=todayStr(),tmr=tomorrowStr();
+  const cAll=todos.filter(t=>!t.done).length;
+  const cToday=todos.filter(t=>!t.done&&t.date===today).length;
+  const cTmr=todos.filter(t=>!t.done&&t.date===tmr).length;
+  const cWeek=todos.filter(t=>!t.done&&isThisWeek(t.date)).length;
+  const cOver=todos.filter(t=>!t.done&&t.date&&t.date<today).length;
+  const cNo=todos.filter(t=>!t.done&&!t.date).length;
+
+  const fs=[
+    {f:'all',icon:'📋',label:'Tất cả',count:cAll},
+    {f:'today',icon:'📌',label:'Hôm nay',count:cToday},
+    {f:'tomorrow',icon:'🌅',label:'Ngày mai',count:cTmr},
+    {f:'week',icon:'📆',label:'Tuần này',count:cWeek},
+  ];
+  if(cOver>0)fs.push({f:'overdue',icon:'🚨',label:'Quá hạn',count:cOver});
+  if(cNo>0)fs.push({f:'nodate',icon:'📝',label:'Chưa đặt ngày',count:cNo});
+
+  let h='';
+  fs.forEach(x=>{
+    const ac=currentFilter===x.f?'active':'';
+    h+=`<button class="qf-btn ${ac}" data-f="${x.f}" onclick="setFilter('${x.f}')">${x.icon} ${x.label}<span class="qf-count">${x.count}</span></button>`;
+  });
+  document.getElementById('quickFilters').innerHTML=h;
+
+  // Cat pills
+  let cp=`<button class="cat-pill ${currentCatFilter==='all'?'active':''}" data-cat="all" onclick="setCatFilter('all')">Tất cả</button>`;
+  Object.keys(catL).forEach(k=>{
+    cp+=`<button class="cat-pill ${currentCatFilter===k?'active':''}" data-cat="${k}" onclick="setCatFilter('${k}')">${catE[k]} ${catL[k]}</button>`;
+  });
+  document.getElementById('catPills').innerHTML=cp;
+}
+
+function setFilter(f){currentFilter=f;renderFilters();renderTodos()}
+function setCatFilter(c){currentCatFilter=c;renderFilters();renderTodos()}
+
+function getFiltered(){
+  let list=todos;
+  const today=todayStr();
+  if(currentFilter==='today')list=list.filter(t=>t.date===today);
+  else if(currentFilter==='tomorrow')list=list.filter(t=>t.date===tomorrowStr());
+  else if(currentFilter==='week')list=list.filter(t=>isThisWeek(t.date));
+  else if(currentFilter==='overdue')list=list.filter(t=>t.date&&t.date<today&&!t.done);
+  else if(currentFilter==='nodate')list=list.filter(t=>!t.date);
+  if(currentCatFilter!=='all')list=list.filter(t=>t.cat===currentCatFilter);
+  return list;
+}
+
+// ====== PROGRESS ======
+function updProgress(){
+  const today=todayStr();
+  const todayTodos=todos.filter(t=>t.date===today||(!t.date&&t.repeat&&t.repeat!=='none'));
+  const total=todayTodos.length;const done=todayTodos.filter(t=>t.done).length;
+  const pct=total===0?0:Math.round(done/total*100);
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressText').textContent=`${done}/${total} hoàn thành hôm nay (${pct}%)`;
+  if(total>0&&done===total)document.getElementById('greetingSub').textContent='🎉 Xong hết rồi! Giỏi quá đi!';
+}
+
+// ====== RENDER ======
+function renderTodos(){
+  const list=getFiltered();
+  const pending=list.filter(t=>!t.done);
+  const done=list.filter(t=>t.done);
+  const today=todayStr();
+
+  // Sort
+  const pO={high:0,medium:1,low:2};
+  pending.sort((a,b)=>{
+    // Overdue first
+    const aOver=a.date&&a.date<today?-1:0;
+    const bOver=b.date&&b.date<today?-1:0;
+    if(aOver!==bOver)return aOver-bOver;
+    if(pO[a.priority]!==pO[b.priority])return pO[a.priority]-pO[b.priority];
+    if(a.date&&b.date&&a.date!==b.date)return a.date.localeCompare(b.date);
+    if(a.time&&b.time)return a.time.localeCompare(b.time);
+    if(a.time)return -1;if(b.time)return 1;
+    return 0;
+  });
+
+  let html='';
+  if(pending.length===0&&done.length===0){
+    html=`<div class="empty-state"><span class="emoji">🎉</span><p>Không có gì cần làm!<br>Bấm + để thêm nha 😊</p></div>`;
+  } else if(pending.length>0){
+    html+=`<div class="section-title">📌 Cần làm <span class="count">${pending.length}</span></div>`;
+
+    // Group by date
+    if(currentFilter==='all'||currentFilter==='week'){
+      const groups={};
+      pending.forEach(t=>{const k=t.date||'nodate';if(!groups[k])groups[k]=[];groups[k].push(t)});
+      const sortedKeys=Object.keys(groups).sort((a,b)=>{if(a==='nodate')return 1;if(b==='nodate')return -1;return a.localeCompare(b)});
+      sortedKeys.forEach(k=>{
+        let label='';
+        if(k==='nodate')label='📝 Chưa đặt ngày';
+        else if(k===today)label='📌 Hôm nay';
+        else if(k===tomorrowStr())label='🌅 Ngày mai';
+        else if(k<today)label='🚨 Quá hạn';
+        else label='📆 '+formatDateViFull(k);
+        html+=`<div class="date-group-title">${label}</div><div class="todo-list">`;
+        groups[k].forEach(t=>html+=renderItem(t));
+        html+='</div>';
+      });
+    } else {
+      html+='<div class="todo-list">';
+      pending.forEach(t=>html+=renderItem(t));
+      html+='</div>';
+    }
+  }
+  document.getElementById('todoContainer').innerHTML=html;
+
+  let dh='';
+  if(done.length>0){
+    dh+=`<div class="comp-toggle" onclick="toggleComp()"><span class="arrow ${showCompleted?'open':''}" id="compArrow">▶</span> ✅ Đã xong <span class="count">${done.length}</span></div>`;
+    if(showCompleted){dh+='<div class="todo-list">';done.forEach(t=>dh+=renderItem(t));dh+='</div>'}
+  }
+  document.getElementById('doneContainer').innerHTML=dh;
+  updProgress();
+}
+
+function renderItem(t){
+  const today=todayStr();
+  const over=isOverdue(t)?' overdue':'';
+  const urg=isUrgent(t)?' urgent':'';
+  const dn=t.done?' done':'';
+  let tags=`<span class="todo-tag tag-${t.cat}">${catE[t.cat]} ${catL[t.cat]}</span>`;
+  if(t.priority&&t.priority!=='low')tags+=`<span class="todo-tag tag-priority-${t.priority}">⭐ ${priL[t.priority]}</span>`;
+  if(t.date&&t.date!==today&&!t.done){
+    if(t.date<today)tags+=`<span class="todo-tag tag-overdue">⚠️ Quá hạn</span>`;
+    else tags+=`<span class="todo-tag tag-date">📅 ${formatDateVi(t.date)}</span>`;
+  }
+  if(t.time)tags+=`<span class="todo-tag tag-time">⏰ ${t.time}</span>`;
+  if(t.alarm&&t.time)tags+=`<span class="todo-tag tag-alarm">🔔 ${almL[t.alarmMins]||t.alarmMins+'p'}</span>`;
+  if(t.repeat&&t.repeat!=='none')tags+=`<span class="todo-tag tag-repeat">🔁 ${repL[t.repeat]}</span>`;
+
+  const gcalB=t.time?`<button class="act-btn gcal-b" onclick="event.stopPropagation();openGCal(${t.id})" title="Google Calendar">📅</button>`:'';
+  return `<div class="todo-item${dn}${urg}${over}" data-cat="${t.cat}" data-id="${t.id}">
+    <div class="checkbox" onclick="togDone(${t.id})"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="todo-content"><div class="todo-text">${t.text}</div><div class="todo-meta">${tags}</div></div>
+    <div class="item-actions">${gcalB}<button class="act-btn del-b" onclick="delTodo(${t.id})">×</button></div>
+  </div>`;
+}
+
+function isUrgent(t){if(!t.time||t.done||!t.date||t.date!==todayStr())return false;const n=new Date();const[h,m]=t.time.split(':').map(Number);const tgt=new Date();tgt.setHours(h,m,0);const diff=(tgt-n)/60000;return diff>0&&diff<=30}
+
+// ====== ACTIONS ======
+function togDone(id){const t=todos.find(x=>x.id===id);if(t){t.done=!t.done;if(t.done)confetti();save();renderFilters();renderTodos();if(t.done)showNoti(`✅ "${t.text}" xong rồi! 🎉`)}}
+function delTodo(id){const t=todos.find(x=>x.id===id);todos=todos.filter(x=>x.id!==id);save();renderFilters();renderTodos();if(t)showNoti(`🗑️ Đã xóa "${t.text}"`)}
+function toggleComp(){showCompleted=!showCompleted;renderTodos()}
+
+// ====== ADD TODO ======
+function addTodo(){
+  const inp=document.getElementById('todoInput');const text=inp.value.trim();
+  if(!text){inp.focus();return}
+  const cat=document.getElementById('catSelect').value;
+  const time=document.getElementById('timeInput').value;
+  const repeat=document.getElementById('repeatSelect').value;
+  const alarm=document.getElementById('alarmToggle').checked&&time;
+  const gcal=document.getElementById('gcalToggle').checked;
+  const date=selectedDate==='none'?'':selectedDate;
+
+  const newT={id:nextId++,text,cat,time,date,repeat,priority:selectedPriority,alarm:!!alarm,alarmMins:alarm?selectedAlarmMins:0,gcal:gcal&&!!time,done:false,createdAt:Date.now()};
+  todos.push(newT);
+  if(gcal&&time)openGCal(newT.id);
+
+  inp.value='';document.getElementById('timeInput').value='';
+  document.getElementById('repeatSelect').value='none';
+  document.getElementById('alarmToggle').checked=false;
+  document.getElementById('gcalToggle').checked=false;
+  toggleAlarmChips();
+  selectedPriority='low';
+  document.querySelectorAll('.chip[data-p]').forEach(c=>c.classList.toggle('selected',c.dataset.p==='low'));
+  selectedDate=todayStr();
+  document.querySelectorAll('.date-sc').forEach(c=>c.classList.toggle('selected',c.dataset.d==='today'));
+  document.getElementById('miniCal').classList.remove('show');
+
+  save();renderFilters();renderTodos();
+  showNoti(`✨ Đã thêm "${text}"!`);
+  toggleAdd();
+}
+
+// ====== DATE PICKER ======
+function pickDateShortcut(d){
+  document.querySelectorAll('.date-sc').forEach(c=>c.classList.toggle('selected',c.dataset.d===d));
+  document.getElementById('miniCal').classList.remove('show');
+  if(d==='today')selectedDate=todayStr();
+  else if(d==='tomorrow')selectedDate=tomorrowStr();
+  else if(d==='nextweek')selectedDate=nextWeekStr();
+  else if(d==='none')selectedDate='none';
+  else if(d==='pick')toggleMiniCal();
+}
+
+let miniCalYear,miniCalMonth;
+function toggleMiniCal(){
+  const mc=document.getElementById('miniCal');
+  if(mc.classList.contains('show')){mc.classList.remove('show');return}
+  const now=new Date();miniCalYear=now.getFullYear();miniCalMonth=now.getMonth();
+  renderMiniCal();mc.classList.add('show');
+}
+function renderMiniCal(){
+  const mc=document.getElementById('miniCal');
+  const first=new Date(miniCalYear,miniCalMonth,1);
+  const startDay=first.getDay();
+  const daysInMonth=new Date(miniCalYear,miniCalMonth+1,0).getDate();
+  const today=todayStr();
+
+  let h=`<div class="mini-cal-header"><div class="mini-cal-title">${monthNames[miniCalMonth]} ${miniCalYear}</div><div class="mini-cal-nav"><button onclick="miniCalNav(-1)">◀</button><button onclick="miniCalNav(1)">▶</button></div></div>`;
+  h+='<div class="mini-cal-grid">';
+  dayNames.forEach(d=>h+=`<div class="mini-cal-day">${d}</div>`);
+
+  // Previous month
+  const prevDays=new Date(miniCalYear,miniCalMonth,0).getDate();
+  for(let i=startDay-1;i>=0;i--)h+=`<div class="mini-cal-date other-month">${prevDays-i}</div>`;
+
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=`${miniCalYear}-${String(miniCalMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cls=[];
+    if(ds===today)cls.push('today');
+    if(ds===selectedDate)cls.push('selected');
+    if(ds<today)cls.push('past');
+    if(todos.some(t=>t.date===ds&&!t.done))cls.push('has-task');
+    h+=`<div class="mini-cal-date ${cls.join(' ')}" onclick="pickMiniCalDate('${ds}')">${d}</div>`;
+  }
+  // Fill remaining
+  const totalCells=startDay+daysInMonth;
+  const rem=totalCells%7===0?0:7-totalCells%7;
+  for(let i=1;i<=rem;i++)h+=`<div class="mini-cal-date other-month">${i}</div>`;
+
+  h+='</div>';
+  mc.innerHTML=h;
+}
+function miniCalNav(dir){miniCalMonth+=dir;if(miniCalMonth>11){miniCalMonth=0;miniCalYear++}else if(miniCalMonth<0){miniCalMonth=11;miniCalYear--}renderMiniCal()}
+function pickMiniCalDate(ds){
+  selectedDate=ds;
+  document.querySelectorAll('.date-sc').forEach(c=>c.classList.toggle('selected',c.dataset.d==='pick'));
+  renderMiniCal();
+}
+
+// ====== FORM HELPERS ======
+function selPriority(p){selectedPriority=p;document.querySelectorAll('.chip[data-p]').forEach(c=>c.classList.toggle('selected',c.dataset.p===p))}
+function toggleAlarmChips(){document.getElementById('alarmChips').classList.toggle('show',document.getElementById('alarmToggle').checked)}
+function selAlarm(m){selectedAlarmMins=m;document.querySelectorAll('.chip[data-mins]').forEach(c=>c.classList.toggle('selected',parseInt(c.dataset.mins)===m))}
+function toggleAdd(){const s=document.getElementById('addSection');const f=document.getElementById('fabBtn');s.classList.toggle('show');f.classList.toggle('open');if(s.classList.contains('show'))setTimeout(()=>document.getElementById('todoInput').focus(),100)}
+
+// ====== GOOGLE CALENDAR ======
+function openGCal(id){
+  const t=todos.find(x=>x.id===id);if(!t||!t.time)return;
+  const dateStr=t.date||todayStr();
+  const [y,mo,dy]=dateStr.split('-').map(Number);
+  const [h,m]=t.time.split(':').map(Number);
+  const start=new Date(y,mo-1,dy,h,m);
+  const end=new Date(start.getTime()+3600000);
+  const fmt=d=>d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+  let recur='';
+  if(t.repeat==='daily')recur='&recur=RRULE:FREQ=DAILY';
+  else if(t.repeat==='weekday')recur='&recur=RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR';
+  else if(t.repeat==='weekend')recur='&recur=RRULE:FREQ=WEEKLY;BYDAY=SA,SU';
+  else if(t.repeat==='weekly')recur='&recur=RRULE:FREQ=WEEKLY';
+  else if(t.repeat==='monthly')recur='&recur=RRULE:FREQ=MONTHLY';
+  const url=`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(t.text)}&dates=${fmt(start)}/${fmt(end)}&details=${encodeURIComponent(catE[t.cat]+' '+catL[t.cat]+' | '+priL[t.priority])}${recur}`;
+  window.open(url,'_blank');
+}
+
+// ====== CALENDAR PAGE ======
+function initCal(){const n=new Date();calViewYear=n.getFullYear();calViewMonth=n.getMonth();renderCal()}
+function calNav(dir){calViewMonth+=dir;if(calViewMonth>11){calViewMonth=0;calViewYear++}else if(calViewMonth<0){calViewMonth=11;calViewYear--}renderCal()}
+function calNavToday(){const n=new Date();calViewYear=n.getFullYear();calViewMonth=n.getMonth();calSelectedDate=todayStr();renderCal()}
+
+function renderCal(){
+  document.getElementById('calTitle').textContent=`${monthNames[calViewMonth]} ${calViewYear}`;
+  const first=new Date(calViewYear,calViewMonth,1);
+  const startDay=first.getDay();
+  const daysInMonth=new Date(calViewYear,calViewMonth+1,0).getDate();
+  const today=todayStr();
+
+  let h='';
+  dayNames.forEach(d=>h+=`<div class="cal-day-name">${d}</div>`);
+  const prevDays=new Date(calViewYear,calViewMonth,0).getDate();
+  for(let i=startDay-1;i>=0;i--)h+=`<div class="cal-date other-month">${prevDays-i}</div>`;
+
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=`${calViewYear}-${String(calViewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cls=[];
+    if(ds===today)cls.push('today');
+    if(ds===calSelectedDate)cls.push('selected');
+    if(todos.some(t=>t.date===ds&&!t.done))cls.push('has-task');
+    h+=`<div class="cal-date ${cls.join(' ')}" onclick="selectCalDate('${ds}')">${d}</div>`;
+  }
+  const totalCells=startDay+daysInMonth;const rem=totalCells%7===0?0:7-totalCells%7;
+  for(let i=1;i<=rem;i++)h+=`<div class="cal-date other-month">${i}</div>`;
+
+  document.getElementById('calGrid').innerHTML=h;
+  renderCalTodos();
+}
+
+function selectCalDate(ds){calSelectedDate=ds;renderCal()}
+
+function renderCalTodos(){
+  document.getElementById('calSelectedDate').textContent=formatDateViFull(calSelectedDate);
+  const list=todos.filter(t=>t.date===calSelectedDate);
+  if(list.length===0){
+    document.getElementById('calTodoList').innerHTML=`<div class="empty-state"><span class="emoji">📭</span><p>Không có việc gì ngày này</p></div>`;
+    return;
+  }
+  let h='<div class="todo-list">';
+  list.forEach(t=>h+=renderItem(t));
+  h+='</div>';
+  document.getElementById('calTodoList').innerHTML=h;
+}
+
+// ====== PAGES ======
+function switchPage(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  if(p==='home'){document.getElementById('pageHome').classList.add('active');document.querySelectorAll('.nav-item')[0].classList.add('active');document.getElementById('fabBtn').style.display='flex'}
+  else if(p==='cal'){document.getElementById('pageCal').classList.add('active');document.querySelectorAll('.nav-item')[1].classList.add('active');document.getElementById('fabBtn').style.display='none';renderCal()}
+}
+
+// ====== NOTIFICATIONS ======
+function showNoti(msg){const b=document.getElementById('notiBar');b.textContent=msg;b.classList.add('show');setTimeout(()=>b.classList.remove('show'),2500)}
+function checkNotiPerm(){if(!('Notification'in window)){document.getElementById('notiPermission').style.display='none';return}if(Notification.permission!=='default')document.getElementById('notiPermission').style.display='none';else document.getElementById('notiPermission').classList.add('show')}
+function requestNotiPerm(){if('Notification'in window)Notification.requestPermission().then(p=>{document.getElementById('notiPermission').classList.remove('show');if(p==='granted')showNoti('🔔 Đã bật thông báo!')})}
+function sendNoti(title,body){if('Notification'in window&&Notification.permission==='granted')try{new Notification(title,{body,tag:'todo-'+Date.now()})}catch(e){}}
+
+// ====== ALARM ======
+function playSound(){try{const c=new(window.AudioContext||window.webkitAudioContext)();function b(f,s,d){const o=c.createOscillator();const g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.3,s);g.gain.exponentialRampToValueAtTime(.01,s+d);o.start(s);o.stop(s+d)}const n=c.currentTime;b(880,n,.15);b(880,n+.2,.15);b(1100,n+.4,.3);if(navigator.vibrate)navigator.vibrate([200,100,200,100,300])}catch(e){}}
+function checkAlarms(){const n=new Date();const nowMins=n.getHours()*60+n.getMinutes();const today=todayStr();todos.forEach(t=>{if(!t.alarm||!t.time||t.done)return;if(t.date&&t.date!==today)return;const[h,m]=t.time.split(':').map(Number);const taskMins=h*60+m;const alarmAt=taskMins-t.alarmMins;const key=`${t.id}-${n.toDateString()}`;if(nowMins===alarmAt&&!firedAlarms.has(key)){firedAlarms.add(key);save();triggerAlarm(t)}});renderTodos()}
+function triggerAlarm(t){currentAlarmTodoId=t.id;playSound();document.getElementById('alarmTitle').textContent=t.text;const m=t.alarmMins;document.getElementById('alarmDesc').textContent=m===0?'⏰ Đến giờ rồi! Phải làm ngay!':m<60?`⏰ Còn ${m} phút nữa!`:`⏰ Còn ${m/60} tiếng nữa!`;document.getElementById('alarmOverlay').classList.add('show');sendNoti(`🔔 ${t.text}`,m===0?'Đến giờ rồi!':`Còn ${almL[m]||m+'p'} nữa!`)}
+function dismissAlarm(){document.getElementById('alarmOverlay').classList.remove('show');currentAlarmTodoId=null}
+function doneFromAlarm(){if(currentAlarmTodoId)togDone(currentAlarmTodoId);dismissAlarm()}
+
+// ====== CONFETTI ======
+function confetti(){const colors=['#FF6B6B','#4ECDC4','#FFE66D','#A18CD1','#FF8E53','#44B09E'];for(let i=0;i<12;i++){const el=document.createElement('div');el.className='confetti-piece';el.style.cssText=`left:${Math.random()*100}vw;top:${Math.random()*30}vh;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>.5?'50%':'2px'};width:${5+Math.random()*6}px;height:${5+Math.random()*6}px;animation-duration:${.7+Math.random()*.4}s`;document.body.appendChild(el);setTimeout(()=>el.remove(),1100)}}
+
+// ====== PWA INSTALL ======
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();deferredPrompt=e;showInstallBanner()});
+function showInstallBanner(){
+  const existing=document.getElementById('installBanner');
+  if(existing)existing.remove();
+  const b=document.createElement('div');
+  b.id='installBanner';
+  b.style.cssText='position:fixed;bottom:70px;left:16px;right:16px;background:linear-gradient(135deg,#A18CD1,#FBC2EB);border-radius:14px;padding:14px 16px;color:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:300;display:flex;align-items:center;gap:10px;animation:slideDown .3s ease';
+  b.innerHTML='<span style="font-size:24px">📲</span><div style="flex:1"><div style="font-size:13px;font-weight:700">Cài app lên điện thoại</div><div style="font-size:11px;opacity:.9">Bấm để thêm vào màn hình chính!</div></div><button onclick="installApp()" style="background:white;color:#A18CD1;border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">Cài đặt</button><button onclick="this.parentElement.remove()" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;padding:4px">×</button>';
+  document.body.appendChild(b);
+}
+function installApp(){
+  if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(r=>{if(r.outcome==='accepted')showNoti('📲 Đã cài app thành công!');deferredPrompt=null;const b=document.getElementById('installBanner');if(b)b.remove()})}
+}
+
+// Register Service Worker
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+
+// ====== INIT ======
+load();updDate();updGreeting();checkNotiPerm();renderFilters();renderTodos();updSync();initCal();
+setInterval(checkAlarms,30000);setInterval(updGreeting,600000);setInterval(updDate,60000);
+</script>
+</body>
+</html>
